@@ -29,7 +29,7 @@ drop table if exists express_railway.trails;
 create table express_railway.trails (
   rid INTEGER references express_railway.rails(rid),
   sid INTEGER references express_railway.stations(sid),
-  distance INTEGER,
+  distance_rail INTEGER,
   constraint trails_pk PRIMARY KEY (rid, sid)
 );
 
@@ -38,8 +38,8 @@ create table express_railway.routes (
   route_id INTEGER PRIMARY KEY
 );
 
-drop table if exists express_railway.paths;
-create table express_railway.paths (
+drop table if exists express_railway.legs;
+create table express_railway.legs (
   route_id INTEGER references express_railway.routes(route_id),
   rid INTEGER references express_railway.rails(rid),
   sid INTEGER references express_railway.stations(sid),
@@ -48,12 +48,18 @@ create table express_railway.paths (
   constraint paths_pk PRIMARY KEY (route_id, rid, sid)
 );
 
-drop table if exists expressRailway.trains;
+drop table if exists express_railway.trains;
 create table express_railway.trains (
   tid INTEGER PRIMARY KEY,
   top_speed INTEGER,
   seats_available INTEGER,
   price_mile FLOAT
+);
+
+drop table if exists express_railway.using_trains;
+create table express_railway.using_trains (
+  tid INTEGER references express_railway.trains(tid),
+  route_id INTEGER references express_railway.routes(route_id)
 );
 
 drop table if exists express_railway.passengers;
@@ -75,6 +81,22 @@ create table express_railway.schedules (
   day INTEGER check ( day >= 1 and day <= 7 ),
   time INTEGER check (time >= 1 and time <= 24),
   constraint schedules_pk PRIMARY KEY (route_id, tid, day, time)
+);
+
+
+drop table if exists express_railway.trips;
+create table express_railway.trips (
+  trip_id INTEGER PRIMARY KEY,
+  pid INTEGER references express_railway.passengers(pid)
+);
+
+drop table if exists express_railway.itinerary;
+create table express_railway.itinerary (
+  trip_id INTEGER references express_railway.trips(trip_id),
+  route_id INTEGER references express_railway.routes(route_id),
+  tid INTEGER references  express_railway.trains(tid),
+  day INTEGER,
+  constraint itinerary_pk PRIMARY KEY (trip_id, route_id, day)
 );
 
 commit;
