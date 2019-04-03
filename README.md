@@ -55,7 +55,7 @@ Input: **customer id, route id, day ('Saturday', 'Sunday', etc.)**
 Output: **trip id, route's time, route's train id**
 
 ### 5. find a single route between two stations [optional sorting]
-<br />
+
 Input: **start station id, destination station id, day ('Saturday', 'Sunday', etc.)**
 
 * *Without Sorting*
@@ -140,7 +140,7 @@ Input: **start station id, destination station id, day ('Saturday', 'Sunday', et
 
 
 ### 6. find combos of two routes between two stations [optional sorting]
-<br />
+
 Input: **start station id, destination station id, day ('Saturday', 'Sunday', etc.)**
 
 * *Without Sorting*
