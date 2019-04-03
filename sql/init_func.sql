@@ -112,7 +112,7 @@ returns integer as
 
 drop function if exists get_time(int, int, int, int) cascade;
 create function get_time(route int, start_position int, end_position int, train_id int)
-returns float as
+returns interval as
   $$
   declare
     time_needed float;
@@ -144,12 +144,26 @@ returns float as
       time_needed := time_needed + distance / least(train_speed, rail_speed);
       next_position := next_position + 1;
     end loop;
-    return time_needed;
+    return (time_needed * 60 * 60)::varchar::interval;
   end;
   $$ language plpgsql;
 
+drop function if exists get_transfer_table() cascade;
+create function get_transfer_table()
+returns table(r1 int, r2 int, transfer_station int, r1_position int, r2_position int, r1_stop int, r2_stop int) as
+  $$
+  begin
+    return query
+      select r1.route_id, r2.route_id, transfer.sid, r1.position, r2.position, r1.stop, r2.stop
+      from express_railway.stations transfer
+        join express_railway.legs r1 on transfer.sid = r1.sid
+        join express_railway.legs r2 on transfer.sid = r2.sid
+      where r1.route_id <> r2.route_id and r1.stop is not null and r2.stop is not null
+      order by r1.route_id, r2.route_id, transfer.sid;
+  end;
+  $$ language plpgsql;
 /* *********************************
-*  route/train/schedule search functions
+*  route search functions
  ***********************************/
 
 -- single route trip search
@@ -240,6 +254,342 @@ returns table(route integer, train integer, t time, distance integer) as
       order by dist desc;
   end;
   $$ language plpgsql;
+
+drop function if exists find_route_highest_price(int, int, varchar) cascade;
+create function find_route_highest_price(sid1 int, sid2 int, target_day varchar)
+returns table(route integer, train integer, t time, price integer) as
+  $$
+  begin
+    return query
+      select s.route_id, s.tid, s.time,
+             get_price(s.route_id, arrival.position, destination.position, s.tid) as price
+      from express_railway.schedules s
+      join express_railway.legs arrival on s.route_id = arrival.route_id
+      join express_railway.legs destination on s.route_id = destination.route_id
+      where s.day = $3 and s.available_seats > 0
+       and (arrival.sid = $1 and arrival.stop is not null )
+       and (destination.sid = $2 and destination.stop is not null)
+       and (arrival.position <= destination.position)
+      order by price desc;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_route_lowest_price(int, int, varchar) cascade;
+create function find_route_lowest_price(sid1 int, sid2 int, target_day varchar)
+returns table(route integer, train integer, t time, price integer) as
+  $$
+  begin
+    return query
+      select s.route_id, s.tid, s.time,
+             get_price(s.route_id, arrival.position, destination.position, s.tid) as price
+      from express_railway.schedules s
+      join express_railway.legs arrival on s.route_id = arrival.route_id
+      join express_railway.legs destination on s.route_id = destination.route_id
+      where s.day = $3 and s.available_seats > 0
+       and (arrival.sid = $1 and arrival.stop is not null )
+       and (destination.sid = $2 and destination.stop is not null)
+       and (arrival.position <= destination.position)
+      order by price;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_route_most_time(int, int, varchar) cascade;
+create function find_route_most_time(sid1 int, sid2 int, target_day varchar)
+returns table(route integer, train integer, t time, travel_time interval) as
+  $$
+  begin
+    return query
+      select s.route_id, s.tid, s.time,
+             get_time(s.route_id, arrival.position, destination.position, s.tid) as travel_time
+      from express_railway.schedules s
+      join express_railway.legs arrival on s.route_id = arrival.route_id
+      join express_railway.legs destination on s.route_id = destination.route_id
+      where s.day = $3 and s.available_seats > 0
+       and (arrival.sid = $1 and arrival.stop is not null )
+       and (destination.sid = $2 and destination.stop is not null)
+       and (arrival.position <= destination.position)
+      order by travel_time desc;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_route_least_time(int, int, varchar) cascade;
+create function find_route_least_time(sid1 int, sid2 int, target_day varchar)
+returns table(route integer, train integer, t time, travel_time interval) as
+  $$
+  begin
+    return query
+      select s.route_id, s.tid, s.time,
+             get_time(s.route_id, arrival.position, destination.position, s.tid) as travel_time
+      from express_railway.schedules s
+      join express_railway.legs arrival on s.route_id = arrival.route_id
+      join express_railway.legs destination on s.route_id = destination.route_id
+      where s.day = $3 and s.available_seats > 0
+       and (arrival.sid = $1 and arrival.stop is not null )
+       and (destination.sid = $2 and destination.stop is not null)
+       and (arrival.position <= destination.position)
+      order by travel_time;
+  end;
+  $$ language plpgsql;
+
+-- route combo search
+drop function if exists find_route_combo(int, int, varchar) cascade;
+create function find_route_combo(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, transfer int, route2 integer, t2 time) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, t.transfer_station, pc.r2, pc.t2
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2);
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_fewest_stops(int, int, varchar) cascade;
+create function find_combo_fewest_stops(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, counts integer) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, (t.r1_stop - pc.r1_stop + pc.r2_stop - t.r2_stop) as counts
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by counts;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_most_stations(int, int, varchar) cascade;
+create function find_combo_most_stations(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, counts integer) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, (t.r1_position - pc.p1 + pc.p2 - t.r2_position) as counts
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by counts desc;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_least_distance(int, int, varchar) cascade;
+create function find_combo_least_distance(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, distance integer) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, get_distance(pc.r1, pc.p1, t.r1_position)
+                                        + get_distance(pc.r2, t.r2_position, pc.p2) as dist
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by dist;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_most_distance(int, int, varchar) cascade;
+create function find_combo_most_distance(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, distance integer) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, get_distance(pc.r1, pc.p1, t.r1_position)
+                                        + get_distance(pc.r2, t.r2_position, pc.p2) as dist
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by dist desc;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_lowest_price(int, int, varchar) cascade;
+create function find_combo_lowest_price(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, price integer) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, get_price(pc.r1, pc.p1, t.r1_position, pc.train1)
+                                        + get_price(pc.r2, t.r2_position, pc.p2, pc.train2) as price
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by price;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_highest_price(int, int, varchar) cascade;
+create function find_combo_highest_price(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, price integer) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, get_price(pc.r1, pc.p1, t.r1_position, pc.train1)
+                                        + get_price(pc.r2, t.r2_position, pc.p2, pc.train2) as price
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by price desc;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_least_time(int, int, varchar) cascade;
+create function find_combo_least_time(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, travel_time interval) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, get_time(pc.r1, pc.p1, t.r1_position, pc.train1)
+                                        + get_time(pc.r2, t.r2_position, pc.p2, pc.train2) as travel_time
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by travel_time;
+  end;
+  $$ language plpgsql;
+
+drop function if exists find_combo_most_time(int, int, varchar) cascade;
+create function find_combo_most_time(sid1 int, sid2 int, target_day varchar)
+returns table(route1 integer, t1 time, train1 integer, transfer integer,
+  route2 integer, t2 time, train2 integer, travel_time interval) as
+  $$
+  begin
+    drop table if exists possible_combos;
+    create temp table possible_combos on commit drop as
+      select s1.route_id as r1, r1.position as p1, s1.time as t1, s1.tid as train1, r1.stop as r1_stop,
+             s2.route_id as r2, r2.position as p2, s2.time as t2, s2.tid as train2, r2.stop as r2_stop
+      from express_railway.schedules s1 join express_railway.legs r1 on s1.route_id = r1.route_id,
+      express_railway.schedules s2 join express_railway.legs r2 on s2.route_id = r2.route_id
+      where s1.day = $3 and s1.available_seats > 0 and r1.sid = $1 and r1.stop is not null
+        and s2.day = $3 and s2.available_seats > 0 and r2.sid = $2 and r2.stop is not null
+        and s1.route_id <> s2.route_id
+        and s1.time < s2.time;
+
+    return query
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2, get_time(pc.r1, pc.p1, t.r1_position, pc.train1)
+                                        + get_time(pc.r2, t.r2_position, pc.p2, pc.train2) as travel_time
+      from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
+      where pc.p1 < t.r1_position and pc.p2 > t.r2_position
+        and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
+              < pc.t2 + get_time(pc.r2, 0, t.r2_position, pc.train2)
+      order by travel_time desc;
+  end;
+  $$ language plpgsql;
+
+/* *********************************
+*  advanced query functions
+ ***********************************/
 
 -- train that pass through a specific station at a day/time
 drop function if exists find_trains4station(integer, varchar, time) cascade;
