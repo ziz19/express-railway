@@ -8,7 +8,7 @@ returns record as
   declare
     profile record;
   begin
-    select fname, lname, street, town, postal into profile from express_railway.customers where pid = $1;
+    select t into profile from express_railway.customers where pid = $1;
     return profile;
   end
   $$ language plpgsql;
@@ -334,7 +334,8 @@ returns table(route integer, train integer, t time, travel_time interval) as
 -- route combo search
 drop function if exists find_route_combo(int, int, varchar) cascade;
 create function find_route_combo(sid1 int, sid2 int, target_day varchar)
-returns table(route1 integer, t1 time, transfer int, route2 integer, t2 time) as
+returns table(route1 integer, t1 time, train1 integer, transfer int,
+  route2 integer, t2 time, train2 integer) as
   $$
   begin
     drop table if exists possible_combos;
@@ -349,7 +350,8 @@ returns table(route1 integer, t1 time, transfer int, route2 integer, t2 time) as
         and s1.time < s2.time;
 
     return query
-      select pc.r1, pc.t1, t.transfer_station, pc.r2, pc.t2
+      select pc.r1, pc.t1, pc.train1, t.transfer_station,
+             pc.r2, pc.t2, pc.train2
       from possible_combos pc join get_transfer_table() t on pc.r1 = t.r1 and pc.r2 = t.r2
       where pc.p1 < t.r1_position and pc.p2 > t.r2_position
         and pc.t1 + get_time(pc.r1, 0, t.r1_position, pc.train1)
@@ -680,11 +682,11 @@ returns table(sid integer, name varchar, open time, close time, street varchar, 
 -- trains that do not pass the station
 drop function if exists find_trains_not_pass(int) cascade;
 create function find_trains_not_pass(sid int)
-returns table(name varchar, desciption varchar) as
+returns table(train int, name varchar, desciption varchar) as
   $$
   begin
     return query
-      select t.name, t.description from express_railway.trains t
+      select t.tid, t.name, t.description from express_railway.trains t
       where tid not in
             (select distinct s.tid from express_railway.schedules s
              join express_railway.legs l on s.route_id = l.route_id
