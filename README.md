@@ -12,6 +12,8 @@ system through which customers can be informed about stations, trains, routes, d
 
 * run `insert_data.sql` to create all data
 
+Note: if you are using **DataGrip** and want to view the data in the tables, you may need to manually make **express_railway schema** visible by **select shown schemas**
+
 # How to use the functions
 -----
 Note: `examples.sql` provides a sample run of the following functions.
