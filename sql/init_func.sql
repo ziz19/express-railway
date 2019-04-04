@@ -8,7 +8,7 @@ returns record as
   declare
     profile record;
   begin
-    select t into profile from express_railway.customers where pid = $1;
+    select fname, lname, street, town, postal into profile from express_railway.customers where pid = $1;
     return profile;
   end
   $$ language plpgsql;

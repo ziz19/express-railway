@@ -1,8 +1,8 @@
+select view_customer(106550);
+
 select add_customer('Zinan', 'Zhuang', 'XXXXXXXXX Ave', 'Pittsburgh', 'PA 15555-1234');
 
-select view_customer(106551);
-
-select edit_customer(106551, 'Shijia', 'Liu', 'XXXXXXX Rd', 'Pittsburgh', 'PA XXXXX-1234');
+select edit_customer(995507, 'Shijia', 'Liu', 'XXXXXXX Rd', 'Pittsburgh', 'PA XXXXX-1234');
 
 select reserve_route(100706, 50, 'Thursday');
 
@@ -44,3 +44,5 @@ select find_routes_percent(50);
 select display_route_schedules(22);
 
 select find_available_seats(22, 'Saturday', '02:28');
+
+copy express_railway.customers to 'data/customers.dat';
