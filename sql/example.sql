@@ -44,5 +44,3 @@ select find_routes_percent(50);
 select display_route_schedules(22);
 
 select find_available_seats(22, 'Saturday', '02:28');
-
-copy express_railway.customers to 'data/customers.dat';
