@@ -1,3 +1,65 @@
+289	T289	Passenger	175	300	6
+290	T290	Passenger, Mail & Cargo	175	180	21
+291	T291	Passenger	75	300	12
+292	T292	Passenger with Dining	200	320	24
+293	T293	Passenger, Mail & Cargo	50	90	36
+294	T294	Passenger & Mail	150	120	36
+295	T295	Passenger	125	220	79
+296	T296	Express Passenger, Mail & Carg	175	330	19
+297	T297	Passenger with Dining	200	320	48
+298	T298	Passenger & Cargo	100	300	15
+299	T299	Passenger with Dining	50	250	175
+300	T300	Passenger & Cargo	175	150	4
+301	T301	Passenger	200	80	14
+302	T302	Passenger with Dining	50	80	48
+303	T303	Express Passenger & Mail	150	330	33
+304	T304	Passenger	175	300	77
+305	T305	Passenger with Dining	150	90	3
+306	T306	Passenger	150	90	9
+307	T307	Passenger with Dining	100	250	13
+308	T308	Passenger & Mail	175	320	46
+309	T309	Passenger with Dining	200	150	3
+310	T310	Passenger, Mail & Cargo	100	300	75
+311	T311	Passenger & Cargo	175	220	63
+312	T312	Passenger with Dining	100	150	3
+313	T313	Passenger & Mail	150	150	3
+314	T314	Passenger, Mail & Cargo	150	80	3
+315	T315	Passenger	150	120	8
+316	T316	Passenger & Cargo	125	150	3
+317	T317	Passenger & Mail	125	300	36
+318	T318	Passenger & Mail	125	90	18
+319	T319	Passenger	150	220	66
+320	T320	Passenger, Mail & Cargo	150	150	5
+321	T321	Passenger, Mail & Cargo	175	300	34
+322	T322	Passenger & Cargo	150	120	4
+323	T323	Passenger, Mail & Cargo	200	220	11
+324	T324	Passenger, Mail & Cargo	50	150	75
+325	T325	Passenger	200	180	23
+326	T326	Passenger & Cargo	50	150	75
+327	T327	Passenger & Cargo	200	150	19
+328	T328	Passenger & Mail	175	120	14
+329	T329	Express Passenger	150	330	11
+330	T330	Passenger & Mail	75	150	9
+331	T331	Passenger, Mail & Cargo	100	320	64
+332	T332	Passenger with Dining	50	90	9
+333	T333	Passenger & Mail	50	80	24
+334	T334	Passenger with Dining	100	220	11
+335	T335	Passenger with Dining	175	90	13
+336	T336	Passenger & Mail	50	90	9
+337	T337	Passenger	100	90	18
+338	T338	Passenger & Cargo	100	120	6
+339	T339	Passenger with Dining	200	220	28
+340	T340	Express Passenger & Mail	125	330	132
+341	T341	Passenger with Dining	75	300	2
+342	T342	Express Passenger	200	330	17
+343	T343	Passenger & Cargo	100	80	36
+344	T344	Passenger, Mail & Cargo	100	180	27
+345	T345	Passenger & Mail	150	120	28
+346	T346	Passenger	175	250	29
+347	T347	Passenger & Mail	175	120	27
+348	T348	Express Passenger & Cargo	200	330	5
+349	T349	Passenger & Mail	150	300	7
+350	T350	Express Passenger	150	330	11
 1	T1	Passenger, Mail & Cargo	75	150	6
 2	T2	Passenger, Mail & Cargo	100	90	41
 3	T3	Express Passenger with Dining	175	330	94
@@ -286,65 +348,3 @@
 286	T286	Express Passenger	125	330	119
 287	T287	Passenger & Cargo	100	250	113
 288	T288	Passenger	175	120	27
-289	T289	Passenger	175	300	6
-290	T290	Passenger, Mail & Cargo	175	180	21
-291	T291	Passenger	75	300	12
-292	T292	Passenger with Dining	200	320	24
-293	T293	Passenger, Mail & Cargo	50	90	36
-294	T294	Passenger & Mail	150	120	36
-295	T295	Passenger	125	220	79
-296	T296	Express Passenger, Mail & Carg	175	330	19
-297	T297	Passenger with Dining	200	320	48
-298	T298	Passenger & Cargo	100	300	15
-299	T299	Passenger with Dining	50	250	175
-300	T300	Passenger & Cargo	175	150	4
-301	T301	Passenger	200	80	14
-302	T302	Passenger with Dining	50	80	48
-303	T303	Express Passenger & Mail	150	330	33
-304	T304	Passenger	175	300	77
-305	T305	Passenger with Dining	150	90	3
-306	T306	Passenger	150	90	9
-307	T307	Passenger with Dining	100	250	13
-308	T308	Passenger & Mail	175	320	46
-309	T309	Passenger with Dining	200	150	3
-310	T310	Passenger, Mail & Cargo	100	300	75
-311	T311	Passenger & Cargo	175	220	63
-312	T312	Passenger with Dining	100	150	3
-313	T313	Passenger & Mail	150	150	3
-314	T314	Passenger, Mail & Cargo	150	80	3
-315	T315	Passenger	150	120	8
-316	T316	Passenger & Cargo	125	150	3
-317	T317	Passenger & Mail	125	300	36
-318	T318	Passenger & Mail	125	90	18
-319	T319	Passenger	150	220	66
-320	T320	Passenger, Mail & Cargo	150	150	5
-321	T321	Passenger, Mail & Cargo	175	300	34
-322	T322	Passenger & Cargo	150	120	4
-323	T323	Passenger, Mail & Cargo	200	220	11
-324	T324	Passenger, Mail & Cargo	50	150	75
-325	T325	Passenger	200	180	23
-326	T326	Passenger & Cargo	50	150	75
-327	T327	Passenger & Cargo	200	150	19
-328	T328	Passenger & Mail	175	120	14
-329	T329	Express Passenger	150	330	11
-330	T330	Passenger & Mail	75	150	9
-331	T331	Passenger, Mail & Cargo	100	320	64
-332	T332	Passenger with Dining	50	90	9
-333	T333	Passenger & Mail	50	80	24
-334	T334	Passenger with Dining	100	220	11
-335	T335	Passenger with Dining	175	90	13
-336	T336	Passenger & Mail	50	90	9
-337	T337	Passenger	100	90	18
-338	T338	Passenger & Cargo	100	120	6
-339	T339	Passenger with Dining	200	220	28
-340	T340	Express Passenger & Mail	125	330	132
-341	T341	Passenger with Dining	75	300	2
-342	T342	Express Passenger	200	330	17
-343	T343	Passenger & Cargo	100	80	36
-344	T344	Passenger, Mail & Cargo	100	180	27
-345	T345	Passenger & Mail	150	120	28
-346	T346	Passenger	175	250	29
-347	T347	Passenger & Mail	175	120	27
-348	T348	Express Passenger & Cargo	200	330	5
-349	T349	Passenger & Mail	150	300	7
-350	T350	Express Passenger	150	330	11
