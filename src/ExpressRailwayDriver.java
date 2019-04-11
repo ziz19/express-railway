@@ -22,42 +22,33 @@ public class ExpressRailwayDriver {
 
     public void importDatabase() {
     	try {
+            /* delete all current data in the database */
+            eraseDatabase();
+
     	    connection.setAutoCommit(false);
     	    statement = connection.createStatement();
 
-        /* delete all current data in the database */
-    	    statement.executeUpdate("delete from express_railway.itinerary;");
-        statement.executeUpdate("delete from express_railway.trips;");
-        statement.executeUpdate("delete from express_railway.schedules;");
-        statement.executeUpdate("delete from express_railway.legs;");
-        statement.executeUpdate("delete from express_railway.routes;");
-        statement.executeUpdate("delete from express_railway.trails;");
-        statement.executeUpdate("delete from express_railway.rails;");
-        statement.executeUpdate("delete from express_railway.trains;");
-        statement.executeUpdate("delete from express_railway.stations;");
-        statement.executeUpdate("delete from express_railway.customers;");
-
-        /* import stored data into database */
-        statement.executeUpdate("copy express_railway.customers from '"
-          + dataFolder + "/customers.dat';");
-        statement.executeUpdate("copy express_railway.trains from '"
-          + dataFolder + "/trains.dat';");
-        statement.executeUpdate("copy express_railway.stations from '"
-          + dataFolder + "/stations.dat';");
-        statement.executeUpdate("copy express_railway.rails from '"
-          + dataFolder + "/rails.dat';");
-        statement.executeUpdate("copy express_railway.trails from '"
-          + dataFolder + "/trails.dat';");
-        statement.executeUpdate("copy express_railway.routes from '"
-          + dataFolder + "/routes.dat';");
-        statement.executeUpdate("copy express_railway.legs from '"
-          + dataFolder + "/legs.dat';");
-        statement.executeUpdate("copy express_railway.schedules from '"
-          + dataFolder + "/schedules.dat';");
-        statement.executeUpdate("copy express_railway.trips from '"
-          + dataFolder + "/trips.dat';");
-        statement.executeUpdate("copy express_railway.itinerary from '"
-          + dataFolder + "/itinerary.dat';");
+            /* import stored data into database */
+            statement.executeUpdate("copy express_railway.customers from '"
+              + dataFolder + "/customers.dat';");
+            statement.executeUpdate("copy express_railway.trains from '"
+              + dataFolder + "/trains.dat';");
+            statement.executeUpdate("copy express_railway.stations from '"
+              + dataFolder + "/stations.dat';");
+            statement.executeUpdate("copy express_railway.rails from '"
+              + dataFolder + "/rails.dat';");
+            statement.executeUpdate("copy express_railway.trails from '"
+              + dataFolder + "/trails.dat';");
+            statement.executeUpdate("copy express_railway.routes from '"
+              + dataFolder + "/routes.dat';");
+            statement.executeUpdate("copy express_railway.legs from '"
+              + dataFolder + "/legs.dat';");
+            statement.executeUpdate("copy express_railway.schedules from '"
+              + dataFolder + "/schedules.dat';");
+            statement.executeUpdate("copy express_railway.trips from '"
+              + dataFolder + "/trips.dat';");
+            statement.executeUpdate("copy express_railway.itinerary from '"
+              + dataFolder + "/itinerary.dat';");
     	    connection.commit();
     	}
     	catch(Exception Ex)
@@ -72,7 +63,6 @@ public class ExpressRailwayDriver {
     			System.out.println("Cannot close Statement. Machine error: "+e.toString());
     		}
     	}
-
     }
 
     public void exportDatabase() {
@@ -116,6 +106,38 @@ public class ExpressRailwayDriver {
     		}
     	}
 
+    }
+
+    public void eraseDatabase() {
+    	try {
+    	    connection.setAutoCommit(false);
+    	    statement = connection.createStatement();
+
+        /* delete all current data in the database */
+    	statement.executeUpdate("delete from express_railway.itinerary;");
+        statement.executeUpdate("delete from express_railway.trips;");
+        statement.executeUpdate("delete from express_railway.schedules;");
+        statement.executeUpdate("delete from express_railway.legs;");
+        statement.executeUpdate("delete from express_railway.routes;");
+        statement.executeUpdate("delete from express_railway.trails;");
+        statement.executeUpdate("delete from express_railway.rails;");
+        statement.executeUpdate("delete from express_railway.trains;");
+        statement.executeUpdate("delete from express_railway.stations;");
+        statement.executeUpdate("delete from express_railway.customers;");
+	    connection.commit();
+    	}
+    	catch(Exception Ex)
+    	{
+    		System.out.println("Machine Error: " +
+    				   Ex.toString());
+    	}
+    	finally{
+    		try {
+    			if (statement!=null) statement.close();
+    		} catch (SQLException e) {
+    			System.out.println("Cannot close Statement. Machine error: "+e.toString());
+    		}
+    	}
     }
 
     public void searchSingleRoute(int origin, int destination, String day, int sortBy) {
@@ -447,7 +469,7 @@ public class ExpressRailwayDriver {
                 prepStatement = connection.prepareCall(query);
                 prepStatement.setInt(1, stationID);
                 prepStatement.setString(2, day);
-                prepStatement.setTime(3, Time.valueOf(time));
+                prepStatement.setObject(3, LocalTime.parse(time));
                 resultSet = prepStatement.executeQuery();
 
                 // display results
@@ -716,7 +738,16 @@ public class ExpressRailwayDriver {
             // db.findTrainsNotPass(3);
             // db.findRoutesPercent(50);
             // db.displayRouteSchedules(22);
-            db.findAvailableSeats(22, "Saturday", "02:28");
+            // db.findAvailableSeats(22, "Saturday", "02:28");
+            // db.findTrains4Station(1, "Saturday", "02:28");
+            // db.importDatabase();
+
+            /* main run of the client app */
+            boolean isRunning = true;
+            while(isRunning) {
+                System.out.println("")
+            }
+            System.out.println("Progrm exits.");
     	}
     	catch(Exception Ex)  {
     	    System.out.println("Error connecting to database.  Machine Error: " +
