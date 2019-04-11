@@ -107,4 +107,10 @@ drop trigger if exists add_reservation on express_railway.itinerary;
 create trigger add_reservation after insert on express_railway.itinerary
 for each row execute procedure update_seats();
 
+-- create index
+create index idx_leg on express_railway.legs(route_id, sid);
+create index idx_schedule on express_railway.schedules(route_id);
+create index idx_station on express_railway.stations(sid);
+create index idx_train on express_railway.trains(tid);
+
 commit;

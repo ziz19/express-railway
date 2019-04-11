@@ -41,7 +41,8 @@ returns record as
         town = $5,
         postal = $6
     where pid = $1;
-    select view_customer($1) into new_profile;
+    select * from view_customer($1)
+      c(fname varchar, lname varchar, street varchar, town varchar, postal char(13)) into new_profile;
     return new_profile;
   end
   $$ language plpgsql;
@@ -600,10 +601,9 @@ returns table(trains integer) as
   $$
   begin
     return query
-      select s.tid from express_railway.schedules s
-      where s.day = $2 and s.time = $3 and s.route_id in (
-      select l.route_id from express_railway.legs l
-      where l.sid = $1 and l.stop is not null);
+      select s.tid from express_railway.legs l join express_railway.schedules s on l.route_id = s.route_id
+      where l.sid = $1 and l.stop is not null
+        and s.day = $2 and s.time + get_time(s.route_id, 0, l.position, s.tid) = time;
   end;
 $$ language plpgsql;
 
@@ -616,6 +616,7 @@ returns table(route integer, rail_counts bigint) as
     return query
       select route_id, count(distinct rid) as rail_counts from express_railway.legs
       group by route_id
+      having count(distinct rid) > 1
       order by rail_counts desc;
   end;
   $$ language plpgsql;
