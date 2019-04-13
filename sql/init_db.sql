@@ -112,5 +112,7 @@ create index idx_leg on express_railway.legs(route_id, sid);
 create index idx_schedule on express_railway.schedules(route_id);
 create index idx_station on express_railway.stations(sid);
 create index idx_train on express_railway.trains(tid);
+create index idx_rail on express_railway.rails(rid);
+create index idx_trail on express_railway.trails(rid, sid);
 
 commit;
